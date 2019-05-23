@@ -1,15 +1,13 @@
-#!/bin/sh
+#!/usr/bin/env python3
 
-SCRIPT_ABS_PATH=$(readlink -f "$0")
-SCRIPT_ABS_DIR=$(dirname $SCRIPT_ABS_PATH)
-SCRIPT="$SCRIPT_ABS_DIR/joern-cli/target/universal/stage/bin/joern-parse"
+import argparse
 
-LOG4J_FILENAME="$SCRIPT_ABS_DIR/joern-cli/src/main/resources/log4j2.xml"
-export JAVA_OPTS="-Dlog4j.configurationFile=$LOG4J_FILENAME $JAVA_OPTS"
-
-if [ ! -f "$SCRIPT" ]; then
-    echo "You need to run 'sbt stage' first";
-    exit 1;
-fi;
-
-$SCRIPT $@;
+def main():
+    parser = argparse.ArgumentParser(description='Create a code property graph from C/C++ code using a fuzzy parser')
+    parser.add_argument('<input-dir>', type=str, help='source directories containing C/C++ code', nargs="+")
+    parser.add_argument("--name", action='store_const', const = 'cpgName', help='optional CPG name')
+    args = parser.parse_args()
+    
+    
+if __name__ == '__main__':
+   main()
