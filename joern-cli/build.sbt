@@ -20,6 +20,8 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.8" % Test,
 )
 
+dependencyOverrides += "io.shiftleft" % "overflowdb-tinkerpop3" % "d7a4dbc8983c7c78b4a161ca746aba3a93c68605"
+
 excludeDependencies ++= Seq(
   // This project uses Logback in place of Log4j
   ExclusionRule("org.apache.logging.log4j", "log4j-slf4j-impl"),
