@@ -1,0 +1,1 @@
+./schema-extender/target/universal/stage/bin/schema-extender
