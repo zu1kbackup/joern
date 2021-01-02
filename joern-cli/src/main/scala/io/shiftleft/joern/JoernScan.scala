@@ -51,7 +51,7 @@ object JoernScan extends App with BridgeBase {
     implicit val engineContext: EngineContext = null
     implicit val formats: AnyRef with Formats = Serialization.formats(NoTypeHints)
     val queryDb = new QueryDatabase(new JoernDefaultArgumentProvider())
-    val outFileName = "querydb.json"
+    val outFileName = "/tmp/querydb.json"
     better.files
       .File(outFileName)
       .write(
