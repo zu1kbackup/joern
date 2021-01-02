@@ -22,6 +22,7 @@ else
   SCRIPT_ABS_DIR=$(dirname "$SCRIPT_ABS_PATH")
 fi
 
+
 # Check required tools are installed.
 check_installed() {
   if ! type "$1" > /dev/null; then
@@ -30,7 +31,8 @@ check_installed() {
   fi
 }
 
-# Confirm install with user.
+check_installed "java"
+
 JOERN_DEFAULT_INSTALL_DIR=~/bin/joern
 JOERN_DEFAULT_LINK_DIR="/usr/local/bin"
 JOERN_DEFAULT_VERSION=""
@@ -41,6 +43,7 @@ if [ "$1" = "--non-interactive" ]; then
   JOERN_LINK_DIR=$JOERN_DEFAULT_LINK_DIR
   JOERN_VERSION=$JOERN_DEFAULT_VERSION
 else
+    # Confirm install with user.
     echo -n "This script will download and install the Joern tools on your machine. Proceed? [Y/n]: "
     read -r JOERN_PROMPT_ANSWER
 
