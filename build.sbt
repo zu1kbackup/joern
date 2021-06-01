@@ -5,6 +5,7 @@ organization := "io.shiftleft"
 ThisBuild / scalaVersion := "2.13.4"
 ThisBuild /Test /fork := true
 val cpgVersion = "1.3.187"
+val ghidra2cpgVersion = "0.1"
 
 ThisBuild / resolvers ++= Seq(
   Resolver.mavenLocal,
