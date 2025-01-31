@@ -1,6 +1,6 @@
 import java.io.File
 import java.nio.file.Files
-import scala.collection.JavaConverters._
+import scala.collection.JavaConverters.*
 
 object FileUtils {
 
@@ -14,7 +14,7 @@ object FileUtils {
     if (root.exists) {
       Files.walk(root.toPath).iterator.asScala.map(_.toFile).collect {
         case file if (file.isDirectory) => deleteRecursively(file)
-        case file => file.delete()
+        case file                       => file.delete()
       }
     }
   }

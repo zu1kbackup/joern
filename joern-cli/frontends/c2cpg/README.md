@@ -4,6 +4,12 @@
 
 An [Eclipse CDT](https://wiki.eclipse.org/CDT/designs/Overview_of_Parsing) based parser for C/C++ that creates code property graphs according to the specification at https://github.com/ShiftLeftSecurity/codepropertygraph .
 
+## Self-published cdt-core dependency
+Eclipse cdt-core is unfortunately not published to maven central (instead they use their own repository format called p2 tycho, for which tooling is rather limited). Therefor we re-publish it to [maven central](https://repo1.maven.org/maven2/io/joern/eclipse-cdt-core/) under the `io.joern` organization, so we can use it in joern as well as other downstream projects. 
+If you want to upgrade cdt-core, edit the eclipse-cdt/eclipse-cdt-core-publish.sh script and adapt the top two variables (`JAR_URL` and `CUSTOM_RELEASE_VERSION`), then run the script and follow the instructions.
+Once it's on maven central, update the version in build.sbt and give it a try!
+
+
 ## Building the code
 
 The build process has been verified on Linux, and it should be possible 
@@ -57,7 +63,7 @@ RAM 32,0 GB (24 GB for the JVM)
 Samsung SSD 970 EVO Plus 1TB
 ```
 
-Includes for the linux kernel are partly unresolvable. These are files actually not contained in the linux Github repository, e.g., stuff in:
+Includes for the linux kernel are partly unresolvable. These are files actually not contained in the linux GitHub repository, e.g., stuff in:
   - `drivers/` for `gpu/` and/or `drm/`
   - `fs/` for specific filesystems like `xfs/`
 

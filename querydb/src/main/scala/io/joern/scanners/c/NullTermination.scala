@@ -1,18 +1,17 @@
 package io.joern.scanners.c
 
 import io.joern.scanners.{Crew, QueryTags}
-import io.shiftleft.semanticcpg.language._
-import io.joern.dataflowengineoss.language._
-import io.joern.console._
-import io.joern.console._
+import io.shiftleft.semanticcpg.language.*
+import io.joern.dataflowengineoss.language.*
+import io.joern.console.*
 import io.joern.dataflowengineoss.queryengine.EngineContext
-import io.joern.dataflowengineoss.semanticsloader.Semantics
-import io.joern.macros.QueryMacros._
+import io.joern.dataflowengineoss.semanticsloader.NoSemantics
+import io.joern.macros.QueryMacros.*
 
 object NullTermination extends QueryBundle {
 
-  implicit val engineContext: EngineContext = EngineContext(Semantics.empty)
-  implicit val resolver: ICallResolver = NoResolve
+  implicit val engineContext: EngineContext = EngineContext(NoSemantics)
+  implicit val resolver: ICallResolver      = NoResolve
 
   @q
   def strncpyNoNullTerm(): Query =
@@ -30,22 +29,21 @@ object NullTermination extends QueryBundle {
         |""".stripMargin,
       score = 4,
       withStrRep({ cpg =>
-        val allocations = cpg.method(".*malloc$").callIn.argument(1).l
+        val allocations = cpg.method(".*malloc$").callIn.argument(1)
         cpg
           .method("(?i)strncpy")
           .callIn
           .map { c =>
             (c.method, c.argument(1), c.argument(3))
           }
-          .filter {
-            case (method, dst, size) =>
-              dst.reachableBy(allocations).codeExact(size.code).nonEmpty &&
-                method.assignments
-                  .where(_.target.arrayAccess.code(s"${dst.code}.*\\[.*"))
-                  .source
-                  .isLiteral
-                  .code(".*0.*")
-                  .isEmpty
+          .filter { case (method, dst, size) =>
+            dst.reachableBy(allocations).codeExact(size.code).nonEmpty &&
+            method.assignment
+              .where(_.target.arrayAccess.code(s"${dst.code}.*\\[.*"))
+              .source
+              .isLiteral
+              .code(".*0.*")
+              .isEmpty
           }
           .map(_._2)
       }),

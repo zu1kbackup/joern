@@ -1,24 +1,15 @@
 name := "jimple2cpg"
 
-scalaVersion := "2.13.7"
-
-val sootVersion      = "4.2.1"
-val slf4jVersion     = "1.7.32"
-val scalatestVersion = "3.2.10"
-
-dependsOn(Projects.dataflowengineoss)
+dependsOn(Projects.dataflowengineoss % "compile->compile;test->test", Projects.x2cpg % "compile->compile;test->test")
 
 libraryDependencies ++= Seq(
   "io.shiftleft"  %% "codepropertygraph" % Versions.cpg,
-  "io.shiftleft"  %% "semanticcpg"       % Versions.cpg,
-  "org.soot-oss"   % "soot"              % sootVersion,
-  "org.slf4j"      % "slf4j-api"         % slf4jVersion,
-  "org.slf4j"      % "slf4j-simple"      % slf4jVersion,
-  "org.scalatest" %% "scalatest"         % scalatestVersion % Test,
-  "io.shiftleft"  %% "semanticcpg"       % Versions.cpg % Test classifier "tests",
+  "org.soot-oss"   % "soot"              % Versions.soot,
+  "org.typelevel" %% "cats-core"         % Versions.catsCore,
+  "org.scalatest" %% "scalatest"         % Versions.scalatest % Test,
+  "org.benf"       % "cfr"               % Versions.cfr
 )
 
-enablePlugins(JavaAppPackaging)
-
-trapExit := false
+enablePlugins(JavaAppPackaging, LauncherJarPlugin)
+trapExit    := false
 Test / fork := true

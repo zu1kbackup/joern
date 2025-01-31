@@ -1,29 +1,40 @@
 name: release
 on:
-  push:
-    branches: [master, main]
-    tags: ["*"]
+  schedule:
+    - cron: "0 7 * * *" # run once daily
+  workflow_dispatch:    # allow to manually trigger this workflow
 jobs:
   release:
+    if: github.repository_owner == 'joernio'
     concurrency: release
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: olafurpg/setup-scala@v10
+      - name: Set up JDK
+        uses: actions/setup-java@v4
         with:
-          java-version: adopt@1.11
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
       - run: sudo apt update && sudo apt install -y gnupg
       - run: echo $PGP_SECRET | base64 --decode | gpg --batch --import
         env:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
-      - uses: actions/cache@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          path: |
-            ~/.sbt
-            ~/.coursier
-          key: ${{ runner.os }}-sbt-${{ hashfiles('**/build.sbt') }}
+          ruby-version: 2.7
+      - name: Install Bundler
+        run: gem install bundler -v 2.4.22
+      - name: Delete `.rustup` directory
+        run: rm -rf /home/runner/.rustup # to save disk space
+        if: runner.os == 'Linux'
+      - name: Delete `.cargo` directory # to save disk space
+        run: rm -rf /home/runner/.cargo
+        if: runner.os == 'Linux'
       - run: sbt scalafmtCheck test
       - run: ./testDistro.sh
       - run: |

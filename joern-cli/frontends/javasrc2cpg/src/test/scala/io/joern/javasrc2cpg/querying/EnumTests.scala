@@ -1,12 +1,11 @@
 package io.joern.javasrc2cpg.querying
 
-import io.joern.javasrc2cpg.testfixtures.JavaSrcCodeToCpgFixture
+import io.joern.javasrc2cpg.testfixtures.JavaSrcCode2CpgFixture
 import io.shiftleft.codepropertygraph.generated.nodes.Literal
-import io.shiftleft.semanticcpg.language._
+import io.shiftleft.semanticcpg.language.*
 
-class EnumTests extends JavaSrcCodeToCpgFixture {
-  override val code: String =
-    """
+class EnumTests extends JavaSrcCode2CpgFixture {
+  val cpg = code("""
       |public enum FuzzyBool {
       |  TRUE,
       |  FALSE,
@@ -23,55 +22,53 @@ class EnumTests extends JavaSrcCodeToCpgFixture {
       |    this.label = label;
       |  }
       |}
-      |""".stripMargin
+      |""".stripMargin)
+
+  "the enum type should extends java.lang.Enum" in {
+    cpg.typeDecl.name("FuzzyBool").inheritsFromTypeFullName.l shouldBe List("java.lang.Enum")
+  }
 
   "it should parse a basic enum without values" in {
-    cpg.typeDecl.name(".*FuzzyBool.*").nonEmpty shouldBe true
-    cpg.typeDecl.name(".*FuzzyBool.*").member.size shouldBe 3
-    val List(t, f, m) = cpg.typeDecl.name(".*FuzzyBool.*").member.l
+    inside(cpg.typeDecl.name(".*FuzzyBool.*").l) { case List(typeDecl) =>
+      typeDecl.code shouldBe "public enum FuzzyBool"
 
-    t.order shouldBe 1
-    t.lineNumber shouldBe Some(3)
-    t.columnNumber shouldBe Some(3)
-    t.typeFullName shouldBe "FuzzyBool"
-    t.name shouldBe "TRUE"
-    t.code shouldBe "TRUE"
+      inside(typeDecl.member.l) { case List(trueMember, falseMember, maybeMember) =>
+        trueMember.order shouldBe 1
+        trueMember.lineNumber shouldBe Some(3)
+        trueMember.columnNumber shouldBe Some(3)
+        trueMember.typeFullName shouldBe "FuzzyBool"
+        trueMember.name shouldBe "TRUE"
+        trueMember.code shouldBe "TRUE"
 
-    f.order shouldBe 2
-    f.lineNumber shouldBe Some(4)
-    f.columnNumber shouldBe Some(3)
-    f.typeFullName shouldBe "FuzzyBool"
-    f.name shouldBe "FALSE"
-    f.code shouldBe "FALSE"
+        falseMember.order shouldBe 2
+        falseMember.lineNumber shouldBe Some(4)
+        falseMember.columnNumber shouldBe Some(3)
+        falseMember.typeFullName shouldBe "FuzzyBool"
+        falseMember.name shouldBe "FALSE"
+        falseMember.code shouldBe "FALSE"
 
-    m.order shouldBe 3
-    m.lineNumber shouldBe Some(5)
-    m.columnNumber shouldBe Some(3)
-    m.typeFullName shouldBe "FuzzyBool"
-    m.name shouldBe "MAYBE"
-    m.code shouldBe "MAYBE"
+        maybeMember.order shouldBe 3
+        maybeMember.lineNumber shouldBe Some(5)
+        maybeMember.columnNumber shouldBe Some(3)
+        maybeMember.typeFullName shouldBe "FuzzyBool"
+        maybeMember.name shouldBe "MAYBE"
+        maybeMember.code shouldBe "MAYBE"
+      }
+    }
   }
 
   "it should correctly parse an enum with values" in {
     cpg.typeDecl.name(".*Color.*").nonEmpty shouldBe true
     // 2 enum values and `label` makes 3 members
     cpg.typeDecl.name(".*Color.*").member.size shouldBe 3
-    val List(l, r, b) = cpg.typeDecl.name(".*Color.*").member.l
+    val List(r, b, l) = cpg.typeDecl.name(".*Color.*").member.l
 
-    l.code shouldBe "java.lang.String label"
+    l.code shouldBe "String label"
 
     r.code shouldBe "RED(\"Red\")"
-    r.astChildren.isCall.size shouldBe 1
-    val call = r.astChildren.isCall.head
-    call.name shouldBe "Color.<init>"
-    call.methodFullName shouldBe "Color.<init>"
-    call.order shouldBe 1
-    call.astChildren.size shouldBe 1
-    call.astChildren.head shouldBe a[Literal]
-    call.astChildren.head.code shouldBe "\"Red\""
+    r.astChildren.size shouldBe 0
 
     b.code shouldBe "BLUE(\"Blue\")"
-    b.astChildren.astChildren.size shouldBe 1
-    b.astChildren.astChildren.head.code shouldBe "\"Blue\""
+    b.astChildren.astChildren.size shouldBe 0
   }
 }

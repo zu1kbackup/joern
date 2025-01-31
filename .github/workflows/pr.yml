@@ -1,22 +1,112 @@
 name: pr
 on: pull_request
 jobs:
-  pr:
-    runs-on: ubuntu-18.04
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 1.11
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.11
-    - run: sbt scalafmtCheck test
-    - run: ./testDistro.sh
-    - run: |
-        mkdir /tmp/foo
-        echo "int foo(int a, int b, int c, int d, int e, int f) {}" > /tmp/foo/foo.c
-        ./joern --src /tmp/foo --run scan
-        ./joern-scan /tmp/foo
-        ./joern-scan --dump
-    - run: |
-        cd joern-cli/target/universal/stage
-        ./schema-extender/test.sh
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - name: Install php
+        if: matrix.os == 'macos-latest'
+        run: brew install php
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          cache: false
+          go-version: 1.18
+      - name: Set up Swift
+        if: matrix.os == 'windows-latest'
+        uses: SwiftyLab/setup-swift@latest
+        with:
+          development: true
+          swift-version: "5.10"
+      - name: Delete `.rustup` directory
+        run: rm -rf /home/runner/.rustup # to save disk space
+        if: runner.os == 'Linux'
+      - name: Delete `.cargo` directory # to save disk space
+        run: rm -rf /home/runner/.cargo
+        if: runner.os == 'Linux'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.sbt
+            ~/.coursier
+          key: ${{ runner.os }}-sbt-${{ hashfiles('**/build.sbt') }}
+      - name: Compile and run tests
+        run: sbt clean test
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.sbt
+            ~/.coursier
+          key: ${{ runner.os }}-sbt-${{ hashfiles('**/build.sbt') }}
+      - name: Check formatting
+        run: sbt scalafmtCheck Test/scalafmtCheck
+      - run: echo "Previous step failed because code is not formatted. Run 'sbt scalafmt Test/scalafmt'"
+        if: ${{ failure() }}
+      - name: Validate CITATION.cff
+        uses: dieghernan/cff-validator@v3
+        with:
+          install-r: true
+
+  test-scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.sbt
+            ~/.coursier
+          key: ${{ runner.os }}-sbt-${{ hashfiles('**/build.sbt') }}
+      - run: ./testDistro.sh
+      - run: |
+          mkdir /tmp/foo
+          echo "int foo(int a, int b, int c, int d, int e, int f) {}" > /tmp/foo/foo.c
+          ./joern --src /tmp/foo --run scan
+          ./joern-scan /tmp/foo
+          ./joern-scan --dump
+      - name: Joern Slice Testing
+        run: |
+          mkdir /tmp/slice
+          ./joern-slice data-flow tests/code/javasrc/SliceTest.java -o /tmp/slice/dataflow-slice-javasrc.json
+          echo "checking that the script output contains the content we expect:"
+          ./joern --script "tests/test-dataflow-slice.sc" --param sliceFile=/tmp/slice/dataflow-slice-javasrc.json | grep 'List(boolean b, b, this, s, "MALICIOUS", s, new Foo("MALICIOUS"), s, s, "SAFE", s, b, this, this, b, s, System.out)'
+      - name: SARIF Export Testing
+        run: ./tests/finding-to-sarif-test.sh
+      - run: |
+          cd joern-cli/target/universal/stage
+          ./schema-extender/test.sh
